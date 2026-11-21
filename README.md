@@ -28,6 +28,13 @@ No cloud, no account, no relay: the TV runs the server, and the page is a single
 - A computer with JDK 17, Android SDK platform 34 and `adb` on the PATH to build and install.
 - ADB debugging enabled on the TV (Developer options).
 
+## Download
+
+**[web-remote.apk](https://github.com/dukinfotech/Web-Remote/raw/apk/web-remote.apk)**: a ready-made build, signed with a
+temporary key. Uninstall any older Web Remote from the TV first, since the signature differs. Allow installs from unknown
+sources on the TV, install it, then turn on the accessibility service in the TV's Settings. To build it yourself, see
+below, or run the **Build APK** workflow in the Actions tab of your fork.
+
 ## Install
 
 ```bash
