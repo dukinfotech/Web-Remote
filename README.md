@@ -21,7 +21,7 @@ No cloud, no account, no extra device. The TV runs the server itself and the pag
    If you installed an earlier build signed with a temporary key, uninstall it once first. From this build on, new versions install over the old one and keep your paired devices.
 3. **Open Web Remote** on the TV. In the **Status** card:
    - turn on the **Accessibility service** (the button opens the TV's Settings; find "Web Remote" and switch it on),
-   - turn on the **Control server**. The card now shows an address such as `http://192.168.1.50:6789`.
+   - turn on the **Control server**. The card now shows an address such as `http://192.168.1.50:6789`, and two **QR codes** (home network and Tailscale) appear on the right. Scan one with a phone camera to open the page straight away.
 4. Press **Pair a new device**. A six-digit PIN shows on the TV for one minute.
 5. On your phone or computer (same Wi-Fi), open that address in a browser and type the PIN. Done. The device stays paired until you remove it.
 
@@ -38,12 +38,12 @@ The page has four tabs at the bottom.
 | **Links** | Opens a web address in the TV's browser and remembers recent links. |
 | **Info** | A short guide. |
 
-Tips: tap the TV picture to move the pointer there and click. The keyboard button opens a typing box; whatever you type goes into the field the TV is on, and Enter submits it. Arrow keys, Enter and Esc work from a computer keyboard too.
+Tips: while the TV picture is shown, a tap on it clicks exactly where you tapped, and a mouse pointer over it moves the TV's pointer to the same spot. The keyboard button opens a typing box; whatever you type goes into the field the TV is on, and Enter submits it. Arrow keys, Enter and Esc work from a computer keyboard too.
 
 ### Seeing the TV screen, and hearing it
 
 1. On the TV, turn on **Screen sharing** in the app. Android asks for screen-capture permission (and for the recording permission, which the sound needs; if you refuse that one you still get the picture, only no sound, and it asks again next time).
-2. On the page, press the cast button. Pick the quality (480p, 720p or 1080p; 720p is the default).
+2. On the page, press the cast button. Pick the quality (360p, 480p or 720p; 480p is the default, and 360p is the smoothest, aiming at 60 frames a second).
 3. Press the speaker button on the picture to hear the TV. It only captures what apps play, never a microphone.
 
 Some video (DRM, some streaming apps) and HDMI inputs show black, because Android hides them from screen capture. On an iPhone the sound may stay silent while the silent switch is on.

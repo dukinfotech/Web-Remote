@@ -21,7 +21,7 @@ Không cần đám mây, không cần tài khoản, không cần thêm thiết b
    Nếu bạn đã cài một bản build trước đó ký bằng khóa tạm, hãy gỡ nó một lần. Từ bản này trở đi, bản mới cài đè lên bản cũ và giữ nguyên các thiết bị đã ghép.
 3. **Mở Web Remote** trên tivi. Ở thẻ **Trạng thái**:
    - bật **Dịch vụ trợ năng** (nút sẽ mở Cài đặt của tivi; tìm "Web Remote" và bật lên),
-   - bật **Máy chủ điều khiển**. Thẻ sẽ hiện địa chỉ, ví dụ `http://192.168.1.50:6789`.
+   - bật **Máy chủ điều khiển**. Thẻ sẽ hiện địa chỉ, ví dụ `http://192.168.1.50:6789`, và hai **mã QR** (mạng nhà và Tailscale) hiện ở bên phải. Quét một mã bằng camera điện thoại là mở thẳng trang điều khiển.
 4. Bấm **Ghép đôi thiết bị mới**. Tivi hiện mã PIN 6 số trong 1 phút.
 5. Trên điện thoại hoặc máy tính (cùng Wi-Fi), mở địa chỉ đó bằng trình duyệt rồi nhập mã PIN. Xong. Thiết bị sẽ ở trạng thái đã ghép cho đến khi bạn xóa nó.
 
@@ -38,12 +38,12 @@ Trang có bốn thẻ ở phía dưới.
 | **Liên kết** | Mở một địa chỉ web trên trình duyệt của tivi và nhớ các liên kết gần đây. |
 | **Thông tin** | Hướng dẫn ngắn. |
 
-Mẹo: chạm vào hình tivi để đưa con trỏ tới đó và bấm. Nút bàn phím mở ô gõ chữ; chữ bạn gõ sẽ vào ô mà tivi đang chọn, bấm Enter để gửi. Phím mũi tên, Enter và Esc của bàn phím máy tính cũng dùng được.
+Mẹo: khi đang xem hình tivi, chạm lên hình là bấm đúng chỗ vừa chạm, và con trỏ chuột đặt trên hình sẽ đưa con trỏ tivi tới đúng chỗ đó. Nút bàn phím mở ô gõ chữ; chữ bạn gõ sẽ vào ô mà tivi đang chọn, bấm Enter để gửi. Phím mũi tên, Enter và Esc của bàn phím máy tính cũng dùng được.
 
 ### Xem màn hình tivi và nghe tiếng
 
 1. Trên tivi, bật **Chia sẻ màn hình** trong ứng dụng. Android sẽ xin quyền quay màn hình (và quyền ghi âm để có tiếng; nếu bạn từ chối quyền này thì vẫn có hình, chỉ không có tiếng, và lần sau app sẽ hỏi lại).
-2. Trên trang web, bấm nút chiếu màn hình. Chọn chất lượng (480p, 720p hoặc 1080p; mặc định là 720p).
+2. Trên trang web, bấm nút chiếu màn hình. Chọn chất lượng (360p, 480p hoặc 720p; mặc định là 480p, 360p mượt nhất và nhắm tới 60 khung hình/giây).
 3. Bấm nút loa trên hình để nghe tiếng tivi. App chỉ thu âm thanh mà các ứng dụng phát ra, không bao giờ thu micro.
 
 Một số video (DRM, vài ứng dụng xem phim) và cổng HDMI sẽ hiện màu đen vì Android chặn quay màn hình. Trên iPhone, tiếng có thể im khi công tắc im lặng đang bật.

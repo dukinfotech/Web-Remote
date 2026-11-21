@@ -17,6 +17,8 @@
     <string name="open_on_device">Mở địa chỉ này trên điện thoại hoặc máy tính:</string>
     <string name="pairing_title">Ghép đôi thiết bị mới</string>
     <string name="pairing_hint">Bấm nút bên dưới, rồi nhập mã trên trang điều khiển. Mã chỉ có hiệu lực 1 phút. Nhập sai 5 lần thì bị khóa 5 phút.</string>
+    <string name="qr_scan">Quét bằng camera điện thoại để mở điều khiển</string>
+    <string name="qr_unavailable">Chưa có</string>
     <string name="server_not_running">Máy chủ điều khiển: đã bật nhưng chưa chạy (cổng 6789 có thể đang bị app khác dùng)</string>
     <string name="tailscale_title">Truy cập từ xa (ngoài nhà)</string>
     <string name="tailscale_hint">Cài Tailscale trên tivi và trên điện thoại rồi đăng nhập cùng một tài khoản. Sau đó mở trang điều khiển bằng địa chỉ 100.x.x.x của tivi, đường truyền được mã hóa. Không cần mở cổng trên router.</string>

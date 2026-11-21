@@ -27,7 +27,7 @@ final class ScreenCapture {
     /** The running capture, or null while sharing is off. */
     static volatile ScreenCapture current;
 
-    static final int MIN_INTERVAL_MS = 16;
+    static final int MIN_INTERVAL_MS = 15;
 
     private final MediaProjection projection;
     private final java.util.concurrent.CopyOnWriteArrayList<Controller.AudioSink> audioSinks = new java.util.concurrent.CopyOnWriteArrayList<>();
@@ -37,7 +37,7 @@ final class ScreenCapture {
     private ImageReader reader;
     private final VirtualDisplay display;
     private final int screenW, screenH, dpi;
-    private int width, height, quality = 60;
+    private int width, height, quality = 55;
     private final CopyOnWriteArrayList<Controller.FrameSink> sinks = new CopyOnWriteArrayList<>();
     private final ByteArrayOutputStream jpeg = new ByteArrayOutputStream(96 * 1024);
     private Bitmap padded;
@@ -51,7 +51,7 @@ final class ScreenCapture {
         screenW = metrics.widthPixels;
         screenH = metrics.heightPixels;
         dpi = metrics.densityDpi;
-        width = widthFor(720);
+        width = widthFor(480);
         height = heightFor(width);
         thread.start();
         handler = new Handler(thread.getLooper());
@@ -79,15 +79,16 @@ final class ScreenCapture {
     }
 
     /**
-     * Picture size and JPEG quality: "480p", "720p" (the start-up setting) or "1080p". The width follows the screen's shape.
+     * Picture size and JPEG quality: "360p", "480p" (the start-up setting) or "720p". The width follows the screen's shape.
+     * The smaller the picture, the harder it is compressed, so that 360p can keep 60 frames a second.
      * Every viewer gets the setting, since there is one capture. Anything else is ignored.
      */
     void setMode(String mode) {
         final int h, q;
         switch (mode == null ? "" : mode) {
-            case "480p": h = 480; q = 50; break;
-            case "720p": h = 720; q = 60; break;
-            case "1080p": h = 1080; q = 70; break;
+            case "360p": h = 360; q = 45; break;
+            case "480p": h = 480; q = 55; break;
+            case "720p": h = 720; q = 65; break;
             default: return;
         }
         final int target = widthFor(h);

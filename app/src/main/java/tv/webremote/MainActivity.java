@@ -3,6 +3,7 @@ package tv.webremote;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
@@ -38,7 +39,7 @@ public class MainActivity extends Activity {
     private static final int PANEL2 = 0xFF202634, PRESSED = 0xFF2D3850, ACCENT = 0xFF4DA3FF, DANGER = 0xFFF27A7A;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
-    private LinearLayout page;
+    private LinearLayout page, qrPanel;
     private float density;
     private String builtSignature;
     private final Runnable refresh = new Runnable() {
@@ -64,9 +65,16 @@ public class MainActivity extends Activity {
         int pad = dp(32);
         page.setPadding(pad, dp(20), pad, pad);
         ScrollView scroll = new ScrollView(this);
-        scroll.setBackgroundColor(BG);
         scroll.addView(page);
-        setContentView(scroll);
+        // The QR codes stay on the right while the cards on the left scroll.
+        qrPanel = column();
+        qrPanel.setPadding(0, dp(20), dp(32), pad);
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.HORIZONTAL);
+        root.setBackgroundColor(BG);
+        root.addView(scroll, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f));
+        root.addView(qrPanel, new LinearLayout.LayoutParams(dp(290), LinearLayout.LayoutParams.MATCH_PARENT));
+        setContentView(root);
         applyExtras(getIntent());
     }
 
@@ -191,6 +199,49 @@ public class MainActivity extends Activity {
         updateLive();
     }
 
+    /** One QR code per way in: the home network and Tailscale. A phone that scans one opens the page in its browser. */
+    private void buildQr(boolean listening) {
+        qrPanel.removeAllViews();
+        if (!listening) return;
+        String home = null, tailscale = null;
+        for (String address : Core.addresses()) {
+            if (Core.isTailscale(address)) {
+                if (tailscale == null) tailscale = address;
+            } else if (home == null) {
+                home = address;
+            }
+        }
+        qrPanel.addView(qrCard(getString(R.string.address_home), BLUE, home));
+        qrPanel.addView(qrCard(getString(R.string.address_tailscale), PURPLE, tailscale));
+    }
+
+    private View qrCard(String label, int color, String address) {
+        LinearLayout card = column();
+        card.setGravity(Gravity.CENTER_HORIZONTAL);
+        card.setBackground(rounded(CARD, 20));
+        card.setPadding(dp(14), dp(12), dp(14), dp(12));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.topMargin = dp(14);
+        card.setLayoutParams(params);
+        card.addView(chip(label, color));
+        String url = address == null ? null : "http://" + address + ":" + HttpServer.PORT;
+        Bitmap code = url == null ? null : Qr.of(url, dp(190));
+        if (code == null) {
+            card.addView(text(getString(R.string.qr_unavailable), 15, DIM));
+            return card;
+        }
+        android.widget.ImageView picture = new android.widget.ImageView(this);
+        picture.setImageBitmap(code);
+        picture.setLayoutParams(new LinearLayout.LayoutParams(dp(190), dp(190)));
+        LinearLayout.LayoutParams pictureParams = (LinearLayout.LayoutParams) picture.getLayoutParams();
+        pictureParams.topMargin = dp(8);
+        card.addView(picture);
+        card.addView(text(url, 13, TEXT));
+        card.addView(text(getString(R.string.qr_scan), 12, DIM));
+        return card;
+    }
+
     private void build() {
         page.removeAllViews();
         Pairing pairing = Core.pairing(this);
@@ -257,6 +308,8 @@ public class MainActivity extends Activity {
                 status.addView(line);
             }
         }
+
+        buildQr(listening);
 
         // Card 2: pairing
         LinearLayout pair = card("🔑", getString(R.string.pairing_title));

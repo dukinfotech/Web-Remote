@@ -43,6 +43,8 @@ android {
 }
 
 dependencies {
+    // Draws the QR codes of the TV's addresses.
+    implementation 'com.google.zxing:core:3.5.3'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.json:json:20231013'
 }
