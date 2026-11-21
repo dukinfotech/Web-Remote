@@ -21,7 +21,7 @@ No cloud, no account, no extra device. The TV runs the server itself and the pag
    If you installed an earlier build signed with a temporary key, uninstall it once first. From this build on, new versions install over the old one and keep your paired devices.
 3. **Open Web Remote** on the TV. In the **Status** card:
    - turn on the **Accessibility service** (the button opens the TV's Settings; find "Web Remote" and switch it on),
-   - turn on the **Control server**. The card now shows an address such as `http://192.168.1.50:6789`, with a small **QR code** next to each address (home network and Tailscale). Scan one with a phone camera to open the page straight away.
+   - turn on the **Control server**. The card now shows an address such as `http://192.168.1.50:6789`, with two small **QR codes** beside it (home network and Tailscale). Scan one with a phone camera to open the page straight away.
 4. Press **Pair a new device**. A six-digit PIN shows on the TV for one minute.
 5. On your phone or computer (same Wi-Fi), open that address in a browser and type the PIN. Done. The device stays paired until you remove it.
 

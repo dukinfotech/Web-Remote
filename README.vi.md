@@ -21,7 +21,7 @@ Không cần đám mây, không cần tài khoản, không cần thêm thiết b
    Nếu bạn đã cài một bản build trước đó ký bằng khóa tạm, hãy gỡ nó một lần. Từ bản này trở đi, bản mới cài đè lên bản cũ và giữ nguyên các thiết bị đã ghép.
 3. **Mở Web Remote** trên tivi. Ở thẻ **Trạng thái**:
    - bật **Dịch vụ trợ năng** (nút sẽ mở Cài đặt của tivi; tìm "Web Remote" và bật lên),
-   - bật **Máy chủ điều khiển**. Thẻ sẽ hiện địa chỉ, ví dụ `http://192.168.1.50:6789`, kèm một **mã QR** nhỏ bên cạnh mỗi địa chỉ (mạng nhà và Tailscale). Quét một mã bằng camera điện thoại là mở thẳng trang điều khiển.
+   - bật **Máy chủ điều khiển**. Thẻ sẽ hiện địa chỉ, ví dụ `http://192.168.1.50:6789`, kèm hai **mã QR** nhỏ bên cạnh (mạng nhà và Tailscale). Quét một mã bằng camera điện thoại là mở thẳng trang điều khiển.
 4. Bấm **Ghép đôi thiết bị mới**. Tivi hiện mã PIN 6 số trong 1 phút.
 5. Trên điện thoại hoặc máy tính (cùng Wi-Fi), mở địa chỉ đó bằng trình duyệt rồi nhập mã PIN. Xong. Thiết bị sẽ ở trạng thái đã ghép cho đến khi bạn xóa nó.
 

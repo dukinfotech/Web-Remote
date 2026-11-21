@@ -205,7 +205,7 @@ public class MainActivity extends Activity {
         frame.addView(picture);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
-        params.topMargin = dp(6);
+        params.setMargins(dp(4), 0, dp(4), 0);
         frame.setLayoutParams(params);
         return frame;
     }
@@ -267,13 +267,15 @@ public class MainActivity extends Activity {
         }
         if (listening) {
             // Two columns: on the left what to type (the hint, the home address, the Tailscale address), on the right the
-            // same addresses as QR codes, the home one above the Tailscale one, only for the addresses there are.
+            // same addresses as QR codes side by side, the home one first, only for the addresses there are, with a line under them.
             LinearLayout connect = row();
             LinearLayout how = column();
             how.setGravity(Gravity.CENTER_VERTICAL);
             how.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
             how.addView(text(getString(R.string.open_on_device), 15, DIM));
             LinearLayout codes = column();
+            codes.setGravity(Gravity.CENTER_HORIZONTAL);
+            LinearLayout codeRow = row();
             for (String address : Core.addresses()) {
                 boolean ts = Core.isTailscale(address);
                 LinearLayout line = row();
@@ -282,7 +284,13 @@ public class MainActivity extends Activity {
                 line.addView(text("  " + url, 22, TEXT));
                 how.addView(line);
                 View code = qrCode(url, ts ? PURPLE : BLUE);
-                if (code != null) codes.addView(code);
+                if (code != null) codeRow.addView(code);
+            }
+            codes.addView(codeRow);
+            if (codeRow.getChildCount() > 0) {
+                TextView scan = text(getString(R.string.qr_scan), 12, DIM);
+                scan.setGravity(Gravity.CENTER);
+                codes.addView(scan);
             }
             connect.addView(how);
             connect.addView(codes);
