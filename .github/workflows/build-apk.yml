@@ -1,6 +1,6 @@
 name: Build APK
 
-# Run it from the Actions tab (Run workflow). It builds the signed APK and puts it on a new Release to download.
+# Run it from the Actions tab (Run workflow). It builds the APK and puts it on a new Release to download. With the four SIGNING_* secrets it is signed with your fixed key; without them, with a temporary one.
 on:
   workflow_dispatch:
 
@@ -25,7 +25,15 @@ jobs:
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
           KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
         run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "NOTES=Signed with the fixed key from this repository's secrets: it installs over the previous build." >> "$GITHUB_ENV"
+          else
+            # No secrets: a throwaway key, so the build still works. Each build then has a different signature.
+            export SIGNING_STORE_PASSWORD=temporary-key SIGNING_KEY_PASSWORD=temporary-key SIGNING_KEY_ALIAS=temporary
+            keytool -genkeypair -keystore "$RUNNER_TEMP/release.jks" -alias temporary -keyalg RSA -keysize 2048               -validity 3650 -storepass temporary-key -keypass temporary-key -dname "CN=Web Remote temporary"
+            echo "NOTES=Signed with a temporary key because no signing secrets are set: uninstall the old app before installing this one." >> "$GITHUB_ENV"
+          fi
           export SIGNING_KEYSTORE_FILE="$RUNNER_TEMP/release.jks"
           ./gradlew assembleRelease --console=plain
           cp app/build/outputs/apk/release/app-release.apk web-remote.apk
@@ -33,6 +41,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "build-${{ github.run_number }}" web-remote.apk \
-            --title "Web Remote build ${{ github.run_number }}" \
-            --notes "Commit ${{ github.sha }}. Same signing key every time, so it installs over the previous build."
+          gh release create "build-${{ github.run_number }}" web-remote.apk             --title "Web Remote build ${{ github.run_number }}"             --notes "Commit ${{ github.sha }}. $NOTES"
