@@ -63,11 +63,6 @@ public class RemoteService extends AccessibilityService implements Controller {
         return s != null && s.isRunning();
     }
 
-    int connectedDevices() {
-        HttpServer s = server;
-        return s == null ? 0 : s.clientCount();
-    }
-
     java.util.Set<String> connectedDeviceIds() {
         HttpServer s = server;
         return s == null ? java.util.Collections.<String>emptySet() : s.connectedIds();
@@ -517,6 +512,12 @@ public class RemoteService extends AccessibilityService implements Controller {
         return list;
     }
 
+    /** True when id is a launchable app: the page may only ask for those. */
+    private boolean known(String id) {
+        for (AppInfo a : apps()) if (a.id.equals(id)) return true;
+        return false;
+    }
+
     @Override
     public boolean audioReady() {
         return Build.VERSION.SDK_INT >= 29 && ScreenCapture.current != null
@@ -559,12 +560,6 @@ public class RemoteService extends AccessibilityService implements Controller {
     }
 
     @Override
-    public int screenEncodeMs() {
-        ScreenCapture c = ScreenCapture.current;
-        return c == null ? 0 : c.encodeMs();
-    }
-
-    @Override
     public void pointAt(float fx, float fy) {
         if (Float.isNaN(fx) || Float.isNaN(fy)) return;
         pointerX = Math.max(0, Math.min(screenW - 1, fx * screenW));
@@ -578,9 +573,7 @@ public class RemoteService extends AccessibilityService implements Controller {
 
     @Override
     public byte[] appBanner(String id) {
-        boolean known = false;
-        for (AppInfo a : apps()) if (a.id.equals(id)) known = true;
-        if (!known) return null;
+        if (!known(id)) return null;
         synchronized (bannerCache) {
             byte[] cached = bannerCache.get(id);
             if (cached != null) return cached.length == 0 ? null : cached;
@@ -630,9 +623,7 @@ public class RemoteService extends AccessibilityService implements Controller {
 
     @Override
     public byte[] appIcon(String id) {
-        boolean known = false;
-        for (AppInfo a : apps()) if (a.id.equals(id)) known = true;
-        if (!known) return null;
+        if (!known(id)) return null;
         synchronized (iconCache) {
             byte[] cached = iconCache.get(id);
             if (cached != null) return cached;
@@ -659,9 +650,7 @@ public class RemoteService extends AccessibilityService implements Controller {
 
     @Override
     public boolean launch(String id) {
-        boolean known = false;
-        for (AppInfo a : apps()) if (a.id.equals(id)) known = true;
-        if (!known) return false;
+        if (!known(id)) return false;
         PackageManager pm = getPackageManager();
         Intent intent = pm.getLeanbackLaunchIntentForPackage(id);
         if (intent == null) intent = pm.getLaunchIntentForPackage(id);

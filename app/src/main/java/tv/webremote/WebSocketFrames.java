@@ -93,10 +93,6 @@ final class WebSocketFrames {
         writeFrame(out, 0x2, data);
     }
 
-    static void writeClose(OutputStream out) throws IOException {
-        writeFrame(out, 0x8, new byte[0]);
-    }
-
     /** A server frame is never masked. Writers to one socket must not interleave: callers hold a lock on out. */
     static void writeFrame(OutputStream out, int opcode, byte[] payload) throws IOException {
         synchronized (out) {

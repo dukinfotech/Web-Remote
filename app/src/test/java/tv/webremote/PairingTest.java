@@ -90,31 +90,46 @@ public class PairingTest {
         Pairing.Result locked = pairing.pair(pin, "x", T0 + 10_000);
         assertEquals("the right PIN is refused during the lock", Pairing.Status.LOCKED, locked.status);
         assertTrue(locked.retrySeconds > 280 && locked.retrySeconds <= 300);
-        assertEquals("285.005 s left, rounded up", 286, pairing.lockedSeconds(T0 + 15_000));
+        assertEquals("285.005 s left, rounded up", 286, pairing.lockedSeconds("", T0 + 15_000));
     }
 
     @Test
     public void theLockOutlivesTheWindowAndOpeningANewOneDoesNotLiftIt() {
         String pin = pairing.openWindow(T0);
         for (int i = 0; i < 5; i++) pairing.pair(wrong(pin), "x", T0 + i);
-        assertFalse("a lock closes the window", pairing.windowOpen(T0 + 10));
+        assertTrue("a lock on one address leaves the window open", pairing.windowOpen(T0 + 10));
 
         long later = T0 + 120_000;
         String next = pairing.openWindow(later);
         assertEquals(Pairing.Status.LOCKED, pairing.pair(next, "x", later + 1).status);
-        assertTrue(pairing.lockedSeconds(later + 1) > 0);
+        assertTrue(pairing.lockedSeconds("", later + 1) > 0);
 
         long after = T0 + 5 + Pairing.LOCK_MS + 1;
-        assertEquals(0, pairing.lockedSeconds(after));
+        assertEquals(0, pairing.lockedSeconds("", after));
         String fresh = pairing.openWindow(after);
         assertEquals(Pairing.Status.OK, pairing.pair(fresh, "x", after + 1).status);
+    }
+
+    @Test
+    public void aLockedGuestDoesNotBlockTheOwner() {
+        String pin = pairing.openWindow(T0);
+        for (int i = 0; i < 5; i++) pairing.pair(wrong(pin), "x", T0 + i, "192.168.1.66");
+        assertEquals(Pairing.Status.LOCKED, pairing.pair(pin, "guest", T0 + 10, "192.168.1.66").status);
+        assertEquals(Pairing.Status.OK, pairing.pair(pin, "owner", T0 + 20, "192.168.1.5").status);
+    }
+
+    @Test
+    public void manyWrongPinsFromManyAddressesCloseTheWindow() {
+        String pin = pairing.openWindow(T0);
+        for (int i = 0; i < Pairing.MAX_WINDOW_FAILS; i++) pairing.pair(wrong(pin), "x", T0 + i, "10.0.0." + i);
+        assertFalse(pairing.windowOpen(T0 + 100));
     }
 
     @Test
     public void fewerThanFiveWrongPinsDoNotLock() {
         String pin = pairing.openWindow(T0);
         for (int i = 0; i < 4; i++) pairing.pair(wrong(pin), "x", T0 + i);
-        assertEquals(0, pairing.lockedSeconds(T0 + 10));
+        assertEquals(0, pairing.lockedSeconds("", T0 + 10));
         assertEquals(Pairing.Status.OK, pairing.pair(pin, "x", T0 + 20).status);
     }
 
@@ -158,7 +173,7 @@ public class PairingTest {
         assertTrue(name.length() <= 40);
         pin = pairing.openWindow(T0);
         pairing.pair(pin, "   ", T0);
-        assertEquals("Thiết bị", pairing.devices().get(1).name);
+        assertEquals("Device", pairing.devices().get(1).name);
     }
 
     @Test

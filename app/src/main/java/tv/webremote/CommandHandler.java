@@ -25,14 +25,22 @@ final class CommandHandler {
         this.controller = controller;
     }
 
-    void handle(String message, Reply reply) {
-        if (message == null || message.length() > MAX_MESSAGE) return;
-        JSONObject o;
+    /** The message as JSON, or null when it is too long or not an object. */
+    static JSONObject parse(String message) {
+        if (message == null || message.length() > MAX_MESSAGE) return null;
         try {
-            o = new JSONObject(message);
+            return new JSONObject(message);
         } catch (JSONException malformed) {
-            return;
+            return null;
         }
+    }
+
+    void handle(String message, Reply reply) {
+        JSONObject o = parse(message);
+        if (o != null) handle(o, reply);
+    }
+
+    void handle(JSONObject o, Reply reply) {
         String type = o.optString("t");
         switch (type) {
             case "move":
@@ -91,38 +99,6 @@ final class CommandHandler {
         double v = o.optDouble(key, 0);
         if (Double.isNaN(v) || Double.isInfinite(v)) return 0f;
         return (float) Math.max(0, Math.min(1, v));
-    }
-
-    /** {"t":"screen","on":true|false}: the page starts or stops watching the screen. Null for any other message. */
-    static Boolean screenRequest(String message) {
-        if (message == null || message.length() > MAX_MESSAGE) return null;
-        try {
-            JSONObject o = new JSONObject(message);
-            return "screen".equals(o.optString("t")) ? Boolean.valueOf(o.optBoolean("on")) : null;
-        } catch (JSONException malformed) {
-            return null;
-        }
-    }
-
-    /** {"t":"audio","on":true|false}: the page starts or stops listening. Null for any other message. */
-    static Boolean audioRequest(String message) {
-        if (message == null || message.length() > MAX_MESSAGE) return null;
-        try {
-            JSONObject o = new JSONObject(message);
-            return "audio".equals(o.optString("t")) ? Boolean.valueOf(o.optBoolean("on")) : null;
-        } catch (JSONException malformed) {
-            return null;
-        }
-    }
-
-    /** True for {"t":"unpair"}: the page asks the TV to forget the device that sent it. */
-    static boolean isUnpair(String message) {
-        if (message == null || message.length() > MAX_MESSAGE) return false;
-        try {
-            return "unpair".equals(new JSONObject(message).optString("t"));
-        } catch (JSONException malformed) {
-            return false;
-        }
     }
 
     static boolean isWebLink(String url) {

@@ -38,7 +38,6 @@ final class ScreenCapture {
     private final VirtualDisplay display;
     private final int screenW, screenH, dpi;
     private int width, height, quality = 60;
-    private volatile float encodeMs;
     private final CopyOnWriteArrayList<Controller.FrameSink> sinks = new CopyOnWriteArrayList<>();
     private final ByteArrayOutputStream jpeg = new ByteArrayOutputStream(96 * 1024);
     private Bitmap padded;
@@ -72,11 +71,6 @@ final class ScreenCapture {
 
     private int heightFor(int w) {
         return Math.max(2, (screenH * w / screenW) & ~1);
-    }
-
-    /** Average milliseconds spent turning one frame into a JPEG. */
-    int encodeMs() {
-        return Math.round(encodeMs);
     }
 
     /**
@@ -149,10 +143,6 @@ final class ScreenCapture {
         }
     }
 
-    int listeners() {
-        return audioSinks.size();
-    }
-
     int viewers() {
         return sinks.size();
     }
@@ -160,7 +150,8 @@ final class ScreenCapture {
     void subscribe(Controller.FrameSink sink) {
         sinks.add(sink);
         handler.post(() -> {
-            if (!stopped && sinks.size() == 1) display.setSurface(reader.getSurface());
+            // Not size() == 1: two viewers joining together would each see 2 and neither would turn the display on.
+            if (!stopped && !sinks.isEmpty()) display.setSurface(reader.getSurface());
         });
         byte[] latest = last;
         if (latest != null) sink.frame(latest);
@@ -195,8 +186,6 @@ final class ScreenCapture {
             if (sinks.isEmpty()) return;
             lastAt = SystemClock.uptimeMillis();
             byte[] frame = encode(image);
-            float took = SystemClock.uptimeMillis() - lastAt;
-            encodeMs = encodeMs == 0 ? took : encodeMs * 0.85f + took * 0.15f;
             last = frame;
             for (Controller.FrameSink sink : sinks) sink.frame(frame);
         } catch (RuntimeException | OutOfMemoryError skipped) {

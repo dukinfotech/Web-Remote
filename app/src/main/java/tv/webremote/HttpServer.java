@@ -20,7 +20,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The server the TV runs: it serves the control page and, once a device has paired, one WebSocket per device carrying
@@ -30,10 +32,38 @@ import java.util.concurrent.atomic.AtomicInteger;
 final class HttpServer {
 
     static final int PORT = 6789;
-    private static final int MAX_CONNECTIONS = 12, MAX_LINE = 2048, MAX_HEADERS = 8192, MAX_BODY = 1024;
-    private static final int REQUEST_TIMEOUT_MS = 15_000, SOCKET_TIMEOUT_MS = 45_000;
+    private static final int MAX_CONNECTIONS = 32, MAX_PER_PEER = 8, MAX_LINE = 2048, MAX_HEADERS = 8192, MAX_BODY = 1024;
+    private static final int READ_TIMEOUT_MS = 5_000, HEAD_DEADLINE_MS = 5_000, SOCKET_TIMEOUT_MS = 45_000;
     private static final String PAGE_CSP = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; "
             + "connect-src 'self' ws: wss:; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+
+    private static ThreadFactory daemon(String name) {
+        return runnable -> {
+            Thread t = new Thread(runnable, name);
+            t.setDaemon(true);
+            return t;
+        };
+    }
+
+    private static final ExecutorService NOTIFY = Executors.newCachedThreadPool(daemon("web-remote-notify"));
+    private static final ScheduledExecutorService REAPER = Executors.newSingleThreadScheduledExecutor(daemon("web-remote-reaper"));
+
+    /**
+     * Sends one message to a page without making the caller wait: a socket write blocks for good when the page has stopped
+     * reading, and callers here include the TV's main thread. With thenClose the socket is closed after the message, or after
+     * two seconds if the page never takes it, which also frees the stuck write.
+     */
+    private static void sendLater(Session session, String json, boolean thenClose) {
+        NOTIFY.execute(() -> {
+            try {
+                WebSocketFrames.writeText(session.out, json);
+            } catch (IOException broken) {
+                session.close();
+            }
+            if (thenClose) session.close();
+        });
+        if (thenClose) REAPER.schedule(session::close, 2, TimeUnit.SECONDS);
+    }
 
     private static final class Session {
         final Socket socket;
@@ -53,7 +83,6 @@ final class HttpServer {
         }
     }
 
-    /** state: whether this page is being sent frames; shared: whether the TV is sharing its screen at all. */
     /** state: whether this page is being sent sound; allowed: whether the TV lets pages listen at all. */
     private static String audioJson(boolean on, boolean allowed) {
         return "{\"t\":\"audio\",\"state\":\"" + (on ? "on" : "off") + "\",\"allowed\":" + allowed + "}";
@@ -86,11 +115,7 @@ final class HttpServer {
 
         @Override
         public void ended() {
-            try {
-                WebSocketFrames.writeText(session.out, audioJson(false, false));
-            } catch (IOException ignored) {
-                // the page is gone
-            }
+            sendLater(session, audioJson(false, false), false);
             close();
         }
 
@@ -141,13 +166,9 @@ final class HttpServer {
         private final Session session;
         private byte[] latest;
         private boolean closed;
-        private long statAt;
 
-        private final Controller controller;
-
-        ScreenFeed(Session session, Controller controller) {
+        ScreenFeed(Session session) {
             this.session = session;
-            this.controller = controller;
             Thread t = new Thread(this, "web-remote-screen");
             t.setDaemon(true);
             t.start();
@@ -161,11 +182,7 @@ final class HttpServer {
 
         @Override
         public void ended() {
-            try {
-                WebSocketFrames.writeText(session.out, screenJson(false, false));
-            } catch (IOException ignored) {
-                // the page is gone
-            }
+            sendLater(session, screenJson(false, false), false);
             close();
         }
 
@@ -196,11 +213,6 @@ final class HttpServer {
                 }
                 try {
                     WebSocketFrames.writeBinary(session.out, next);
-                    long now = System.currentTimeMillis();
-                    if (now - statAt >= 1_000) {
-                        statAt = now;
-                        WebSocketFrames.writeText(session.out, "{\"t\":\"stat\",\"enc\":" + controller.screenEncodeMs() + "}");
-                    }
                 } catch (IOException broken) {
                     session.close();
                     return;
@@ -216,7 +228,8 @@ final class HttpServer {
     private final CommandHandler commands;
     private final Controller controller;
     private final String tvName;
-    private final AtomicInteger connections = new AtomicInteger();
+    private final Map<String, Integer> peers = new HashMap<>();
+    private int total;
     private final Map<String, List<Session>> sessions = new HashMap<>();
     private final ExecutorService pool = Executors.newCachedThreadPool(runnable -> {
         Thread t = new Thread(runnable, "web-remote");
@@ -284,13 +297,7 @@ final class HttpServer {
             for (List<Session> list : sessions.values()) all.addAll(list);
         }
         String message = "{\"t\":\"lang\",\"v\":\"" + ("vi".equals(lang) ? "vi" : "en") + "\"}";
-        for (Session session : all) {
-            try {
-                WebSocketFrames.writeText(session.out, message);
-            } catch (IOException broken) {
-                session.close();
-            }
-        }
+        for (Session session : all) sendLater(session, message, false);
     }
 
     /** Ids of the paired devices that have a page open and connected right now. */
@@ -302,19 +309,17 @@ final class HttpServer {
 
     /** Tells every connection of this paired device it has been revoked, then drops it. */
     void disconnect(String deviceId) {
+        disconnect(deviceId, null);
+    }
+
+    /** As above, but the connection named by except (the one that asked to be unpaired) is told by its own thread. */
+    private void disconnect(String deviceId, Session except) {
         List<Session> gone;
         synchronized (sessions) {
             gone = sessions.remove(deviceId);
         }
         if (gone == null) return;
-        for (Session s : gone) {
-            try {
-                WebSocketFrames.writeText(s.out, "{\"t\":\"revoked\"}");
-            } catch (IOException ignored) {
-                // dropping it anyway
-            }
-            s.close();
-        }
+        for (Session s : gone) if (s != except) sendLater(s, "{\"t\":\"revoked\"}", true);
     }
 
     private void acceptLoop() {
@@ -325,8 +330,8 @@ final class HttpServer {
             } catch (IOException | NullPointerException closed) {
                 return;
             }
-            if (!NetPolicy.isAllowedPeer(socket.getInetAddress()) || connections.incrementAndGet() > MAX_CONNECTIONS) {
-                if (connections.get() > MAX_CONNECTIONS) connections.decrementAndGet();
+            String peer = socket.getInetAddress().getHostAddress();
+            if (!NetPolicy.isAllowedPeer(socket.getInetAddress()) || !admit(peer)) {
                 closeQuietly(socket);
                 continue;
             }
@@ -337,19 +342,35 @@ final class HttpServer {
                     // a broken or hostile connection ends here
                 } finally {
                     closeQuietly(socket);
-                    connections.decrementAndGet();
+                    release(peer);
                 }
             });
         }
     }
 
+    /** One slot of the shared limit, and of the limit for one address so a single device cannot use them all. */
+    private synchronized boolean admit(String peer) {
+        int mine = peers.getOrDefault(peer, 0);
+        if (total >= MAX_CONNECTIONS || mine >= MAX_PER_PEER) return false;
+        peers.put(peer, mine + 1);
+        total++;
+        return true;
+    }
+
+    private synchronized void release(String peer) {
+        int mine = peers.getOrDefault(peer, 1) - 1;
+        if (mine <= 0) peers.remove(peer); else peers.put(peer, mine);
+        total--;
+    }
+
     private void serve(Socket socket) throws IOException {
-        socket.setSoTimeout(REQUEST_TIMEOUT_MS);
+        socket.setSoTimeout(READ_TIMEOUT_MS);
+        long deadline = System.nanoTime() + HEAD_DEADLINE_MS * 1_000_000L;
         socket.setTcpNoDelay(true);
         InputStream in = new BufferedInputStream(socket.getInputStream(), 4096);
         OutputStream out = socket.getOutputStream();
 
-        String requestLine = readLine(in, MAX_LINE);
+        String requestLine = readLine(in, MAX_LINE, deadline);
         if (requestLine == null) return;
         String[] parts = requestLine.split(" ");
         if (parts.length != 3) {
@@ -358,7 +379,7 @@ final class HttpServer {
         }
         Map<String, String> headers = new HashMap<>();
         int total = 0;
-        for (String line = readLine(in, MAX_LINE); line != null && !line.isEmpty(); line = readLine(in, MAX_LINE)) {
+        for (String line = readLine(in, MAX_LINE, deadline); line != null && !line.isEmpty(); line = readLine(in, MAX_LINE, deadline)) {
             total += line.length();
             if (total > MAX_HEADERS) {
                 respond(out, 431, "Request Header Fields Too Large", "text/plain", new byte[0]);
@@ -397,7 +418,7 @@ final class HttpServer {
         } else if (method.equals("GET") && path.equals("/favicon.ico")) {
             respond(out, 204, "No Content", "image/x-icon", new byte[0]);
         } else if (method.equals("POST") && path.equals("/api/pair")) {
-            pair(in, out, headers);
+            pair(socket, in, out, headers);
         } else {
             respond(out, 404, "Not Found", "text/plain", "not found".getBytes(StandardCharsets.UTF_8));
         }
@@ -419,7 +440,7 @@ final class HttpServer {
         respond(out, 200, "OK", "image/png", png, "Cache-Control: private, max-age=86400");
     }
 
-    private void pair(InputStream in, OutputStream out, Map<String, String> headers) throws IOException {
+    private void pair(Socket socket, InputStream in, OutputStream out, Map<String, String> headers) throws IOException {
         String type = headers.get("content-type");
         if (type == null || !type.toLowerCase(Locale.ROOT).startsWith("application/json")) {
             respond(out, 415, "Unsupported Media Type", "text/plain", new byte[0]);
@@ -451,7 +472,7 @@ final class HttpServer {
             respond(out, 400, "Bad Request", "text/plain", new byte[0]);
             return;
         }
-        Pairing.Result result = pairing.pair(pin, name, System.currentTimeMillis());
+        Pairing.Result result = pairing.pair(pin, name, System.currentTimeMillis(), socket.getInetAddress().getHostAddress());
         try {
             JSONObject json = new JSONObject();
             int code = 200;
@@ -513,21 +534,25 @@ final class HttpServer {
             while (running) {
                 String message = WebSocketFrames.readText(in, out, CommandHandler.MAX_MESSAGE);
                 if (message == null) break;
-                if (CommandHandler.isUnpair(message)) {
+                JSONObject request = CommandHandler.parse(message);
+                if (request == null) continue;
+                String type = request.optString("t");
+                if (type.equals("unpair")) {
                     // The page's own "Hủy ghép": revoke this device only, as the TV's Thu hồi button does.
                     pairing.revoke(device.id);
-                    disconnect(device.id);
+                    disconnect(device.id, session);
+                    reply.send("{\"t\":\"revoked\"}");
                     break;
                 }
-                Boolean screen = CommandHandler.screenRequest(message);
-                if (screen != null) {
+                if (type.equals("screen")) {
+                    boolean screen = request.optBoolean("on");
                     if (feed != null && feed.isClosed()) {
                         // Sharing was stopped under this page; a later request starts a new feed.
                         controller.screenUnsubscribe(feed);
                         feed = null;
                     }
                     if (screen && feed == null && controller.screenReady()) {
-                        feed = new ScreenFeed(session, controller);
+                        feed = new ScreenFeed(session);
                         controller.screenSubscribe(feed);
                     } else if (!screen && feed != null) {
                         controller.screenUnsubscribe(feed);
@@ -537,8 +562,8 @@ final class HttpServer {
                     reply.send(screenJson(feed != null, controller.screenReady()));
                     continue;
                 }
-                Boolean sound = CommandHandler.audioRequest(message);
-                if (sound != null) {
+                if (type.equals("audio")) {
+                    boolean sound = request.optBoolean("on");
                     if (listen != null && listen.isClosed()) {
                         // Sharing or the sound switch was stopped under this page; a later request starts again.
                         controller.audioUnsubscribe(listen);
@@ -559,7 +584,7 @@ final class HttpServer {
                     reply.send(audioJson(listen != null, controller.audioReady()));
                     continue;
                 }
-                commands.handle(message, reply);
+                commands.handle(request, reply);
             }
         } finally {
             if (listen != null) {
@@ -615,11 +640,12 @@ final class HttpServer {
         out.flush();
     }
 
-    /** A line without its CR LF; null at the end of the stream; an error when it is longer than max. */
-    private static String readLine(InputStream in, int max) throws IOException {
+    /** A line without its CR LF; null at the end of the stream; an error when it is longer than max or the deadline passes. */
+    private static String readLine(InputStream in, int max, long deadline) throws IOException {
         ByteArrayOutputStream line = new ByteArrayOutputStream();
         int b;
         while ((b = in.read()) >= 0) {
+            if (System.nanoTime() - deadline > 0) throw new IOException("request too slow");
             if (b == '\n') return line.toString("UTF-8").replace("\r", "");
             if (line.size() >= max) throw new IOException("line too long");
             line.write(b);

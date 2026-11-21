@@ -94,8 +94,8 @@ settings. The app cannot do this itself.
 
 ## Security
 
-- **Pairing:** a six-digit PIN valid for one minute after you ask for it. Five wrong tries lock pairing for five
-  minutes, and the lock outlives the window. A paired device gets a 256-bit token that the TV stores only as a SHA-256
+- **Pairing:** a six-digit PIN valid for one minute after you ask for it. Five wrong tries from one address lock
+  that address for five minutes (the lock outlives the window, and a guest cannot lock the owner out). A paired device gets a 256-bit token that the TV stores only as a SHA-256
   hash. Each device can be removed from the TV, or unpair itself from the page.
 - **Network:** only the home network, this device and Tailscale's range can connect; any other address is dropped before
   a byte is read. The `Host` header must be an IP address, and an `Origin`, if sent, must match it, which stops other web
@@ -137,7 +137,7 @@ settings. The app cannot do this itself.
 
 ## Tests
 
-`./gradlew testReleaseUnitTest` runs 59 tests: WebSocket framing against the RFC's examples, the network policy,
+`./gradlew testReleaseUnitTest` runs 62 tests: WebSocket framing against the RFC's examples, the network policy,
 pairing and its rate limits, command parsing and bounds, and the real server on localhost (a foreign `Host`, a foreign
 `Origin`, a wrong PIN, a bad token, a revoked device, garbage on the wire).
 

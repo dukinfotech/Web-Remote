@@ -77,7 +77,8 @@ final class NodeTouch {
             // A text field: it becomes the target of typed text even if the browser never reports it as focused.
             lastField = start;
             start.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
-            return start.performAction(AccessibilityNodeInfo.ACTION_CLICK) || true;
+            start.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+            return true;
         }
         for (AccessibilityNodeInfo n = start; n != null; n = n.getParent()) {
             if (n.isClickable() && n.isEnabled() && n.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return true;

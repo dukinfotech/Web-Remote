@@ -56,7 +56,6 @@ public class HttpServerTest {
         @Override public void screenUnsubscribe(FrameSink s) { sink = null; calls.add("unsubscribe"); }
         volatile String quality = "";
         @Override public void screenQuality(String mode) { quality = mode; }
-        @Override public int screenEncodeMs() { return 12; }
         @Override public void pointAt(float fx, float fy) { calls.add("at " + fx + " " + fy); }
         @Override public byte[] appBanner(String id) { return id.equals("com.example.app") ? new byte[]{(byte) 0x89, 'P', 'N', 'G', 1} : null; }
         @Override public byte[] appIcon(String id) { return id.equals("com.example.app") ? new byte[]{(byte) 0x89, 'P', 'N', 'G'} : null; }
@@ -184,7 +183,6 @@ public class HttpServerTest {
             assertTrue(controller.sink != null);
             controller.sink.frame(new byte[]{1, 2, 3});
             assertEquals(3, receiveBinary(s).length);
-            assertEquals("{\"t\":\"stat\",\"enc\":12}", receive(s));
             send(s, "{\"t\":\"screen\",\"on\":false}");
             assertEquals("{\"t\":\"screen\",\"state\":\"off\",\"shared\":true}", receive(s));
             assertEquals(null, controller.sink);
@@ -399,6 +397,62 @@ public class HttpServerTest {
         }
         assertEquals(null, webSocket(token, null));
         assertFalse(server.clientCount() > 0);
+    }
+
+    @Test
+    public void revokingADeviceThatStoppedReadingNeitherBlocksNorKeepsItConnected() throws Exception {
+        String token = pairNow();
+        String id = pairing.devices().get(0).id;
+        try (Socket s = webSocket(token, null)) {
+            receive(s);
+            send(s, "{\"t\":\"screen\",\"on\":true}");
+            receive(s);
+            // Big frames that this client never reads fill the socket, so the server's writer is stuck inside a write.
+            for (int i = 0; i < 3; i++) {
+                controller.sink.frame(new byte[16 << 20]);
+                Thread.sleep(300);
+            }
+            pairing.revoke(id);
+            Thread revoke = new Thread(() -> server.disconnect(id));
+            revoke.start();
+            revoke.join(1_500);
+            assertFalse("disconnect must not wait for a page that stopped reading", revoke.isAlive());
+            Thread.sleep(2_500);
+            // The server has closed the socket by now: reading finds the end (or a reset), never a stall.
+            s.setSoTimeout(10_000);
+            byte[] sink = new byte[1 << 16];
+            try {
+                while (s.getInputStream().read(sink) >= 0) { /* drain */ }
+            } catch (java.net.SocketTimeoutException stuck) {
+                throw new AssertionError("the server never closed the socket", stuck);
+            } catch (IOException reset) {
+                // closed with unread data: a reset is as good as an end of stream
+            }
+        }
+    }
+
+    @Test
+    public void oneAddressCannotTakeEveryConnectionSlot() throws Exception {
+        List<Socket> idle = new ArrayList<>();
+        try {
+            for (int i = 0; i < 12; i++) idle.add(new Socket("127.0.0.1", port));
+            Thread.sleep(300);
+            // This peer is over its own limit, yet the server still answers once the idle ones time out or are refused.
+            int open = 0;
+            for (Socket s : idle) {
+                s.setSoTimeout(200);
+                try {
+                    if (s.getInputStream().read() < 0) continue;
+                } catch (java.net.SocketTimeoutException stillOpen) {
+                    open++;
+                } catch (IOException closed) {
+                    continue;
+                }
+            }
+            assertTrue("at most 8 idle sockets stay open for one address, got " + open, open <= 8);
+        } finally {
+            for (Socket s : idle) s.close();
+        }
     }
 
     @Test

@@ -87,12 +87,13 @@ public class MainActivity extends Activity {
         applyExtras(intent);
     }
 
-    /** adb shell am start -n tv.webremote/.MainActivity --ez server true --ez pair true --ez share true */
+    /**
+     * adb shell am start -n tv.webremote/.MainActivity --ez server true --ez share true. Any app can send these, so they only
+     * switch things a person would switch on anyway: pairing and the accessibility service are not here.
+     */
     private void applyExtras(Intent intent) {
         if (intent == null) return;
         if (intent.hasExtra("server")) Core.setServerEnabled(this, intent.getBooleanExtra("server", false));
-        if (intent.getBooleanExtra("pair", false)) Core.pairing(this).openWindow(System.currentTimeMillis());
-        if (intent.hasExtra("service") && canSwitchService()) switchService(intent.getBooleanExtra("service", true));
         if (intent.hasExtra("share") && intent.getBooleanExtra("share", false) == (ScreenCapture.current == null)) toggleShare();
     }
 
@@ -154,6 +155,12 @@ public class MainActivity extends Activity {
         builtSignature = null;
     }
 
+    /** True when the server is really listening, not only switched on: a busy port or a stopped service leaves it off. */
+    private boolean serverListening() {
+        RemoteService service = RemoteService.instance();
+        return service != null && service.serverRunning();
+    }
+
     private Set<String> connectedIds() {
         RemoteService service = RemoteService.instance();
         return service == null ? java.util.Collections.<String>emptySet() : service.connectedDeviceIds();
@@ -164,8 +171,8 @@ public class MainActivity extends Activity {
         Pairing pairing = Core.pairing(this);
         long now = System.currentTimeMillis();
         StringBuilder sb = new StringBuilder();
-        sb.append(ScreenCapture.current != null).append(canSwitchService()).append(serviceEnabled()).append(Core.serverEnabled(this)).append(pairing.currentPin(now) != null)
-                .append(pairing.lockedSeconds(now) > 0).append(tailscaleLaunchIntent() != null).append(Core.addresses());
+        sb.append(ScreenCapture.current != null).append(canSwitchService()).append(serviceEnabled()).append(Core.serverEnabled(this)).append(serverListening()).append(pairing.currentPin(now) != null)
+                .append(tailscaleLaunchIntent() != null).append(Core.addresses());
         for (Pairing.Device d : pairing.devicesNewestFirst()) sb.append('|').append(d.id).append(d.lastIp);
         return sb.toString();
     }
@@ -224,7 +231,9 @@ public class MainActivity extends Activity {
         status.addView(statusRow(service ? getString(R.string.service_on) : getString(R.string.service_off), service ? GREEN : RED,
                 serviceButton));
         if (!canSwitch) status.addView(text(getString(R.string.service_grant_hint), 12, DIM));
-        status.addView(statusRow(on ? getString(R.string.server_on) : getString(R.string.server_off), on ? GREEN : GREY,
+        boolean listening = serverListening();
+        status.addView(statusRow(!on ? getString(R.string.server_off) : listening ? getString(R.string.server_on) : getString(R.string.server_not_running),
+                !on ? GREY : listening ? GREEN : ORANGE,
                 toggleSwitch("toggle", on, () -> {
                     Core.setServerEnabled(this, !Core.serverEnabled(this));
                     builtSignature = null;
@@ -238,7 +247,7 @@ public class MainActivity extends Activity {
         if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
             status.addView(text(getString(R.string.audio_permission), 12, DIM));
         }
-        if (on) {
+        if (listening) {
             status.addView(text(getString(R.string.open_on_device), 15, DIM));
             for (String address : Core.addresses()) {
                 boolean ts = Core.isTailscale(address);
@@ -253,28 +262,21 @@ public class MainActivity extends Activity {
         // Card 2: pairing
         LinearLayout pair = card("🔑", getString(R.string.pairing_title));
         String pin = pairing.currentPin(now);
-        int locked = pairing.lockedSeconds(now);
-        if (locked > 0) {
-            TextView lock = text(getString(R.string.pairing_locked, locked), 17, RED);
-            lock.setTag("lock");
-            pair.addView(lock);
+        if (pin != null) {
+            TextView pinView = text(pin.substring(0, 3) + " " + pin.substring(3), 56, TEXT);
+            pinView.setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD);
+            pair.addView(pinView);
+            TextView countdown = text("", 16, DIM);
+            countdown.setTag("pin");
+            pair.addView(countdown);
         } else {
-            if (pin != null) {
-                TextView pinView = text(pin.substring(0, 3) + " " + pin.substring(3), 56, TEXT);
-                pinView.setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD);
-                pair.addView(pinView);
-                TextView countdown = text("", 16, DIM);
-                countdown.setTag("pin");
-                pair.addView(countdown);
-            } else {
-                pair.addView(text(getString(R.string.pairing_hint), 16, DIM));
-            }
-            pair.addView(button("pair", getString(R.string.pair_new), () -> {
-                if (!Core.serverEnabled(this)) Core.setServerEnabled(this, true);
-                Core.pairing(this).openWindow(System.currentTimeMillis());
-                builtSignature = null;
-            }));
+            pair.addView(text(getString(R.string.pairing_hint), 16, DIM));
         }
+        pair.addView(button("pair", getString(R.string.pair_new), () -> {
+            if (!Core.serverEnabled(this)) Core.setServerEnabled(this, true);
+            Core.pairing(this).openWindow(System.currentTimeMillis());
+            builtSignature = null;
+        }));
 
         // Card 3: paired devices, newest first and numbered
         List<Pairing.Device> devices = pairing.devicesNewestFirst();
@@ -455,8 +457,6 @@ public class MainActivity extends Activity {
         long now = System.currentTimeMillis();
         TextView pin = page.findViewWithTag("pin");
         if (pin != null) pin.setText(getString(R.string.pin_valid, Math.max(0, (pairing.windowEndsAt() - now + 999) / 1000)));
-        TextView lock = page.findViewWithTag("lock");
-        if (lock != null) lock.setText(getString(R.string.pairing_locked, pairing.lockedSeconds(now)));
         ScreenCapture capture = ScreenCapture.current;
         TextView shareText = page.findViewWithTag("sharetext");
         if (shareText != null && capture != null) {
@@ -565,18 +565,6 @@ public class MainActivity extends Activity {
             action.setLayoutParams(ap);
             line.addView(action);
         }
-        return line;
-    }
-
-    private LinearLayout statusLine(String label, int color) {
-        LinearLayout line = row();
-        View dot = new View(this);
-        dot.setBackground(rounded(color, 8));
-        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(dp(14), dp(14));
-        p.rightMargin = dp(12);
-        dot.setLayoutParams(p);
-        line.addView(dot);
-        line.addView(text(label, 18, TEXT));
         return line;
     }
 

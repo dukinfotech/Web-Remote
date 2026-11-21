@@ -42,7 +42,6 @@ public class CommandHandlerTest {
         @Override public void screenSubscribe(FrameSink sink) { }
         @Override public void screenUnsubscribe(FrameSink sink) { }
         @Override public void screenQuality(String mode) { calls.add("quality " + mode); }
-        @Override public int screenEncodeMs() { return 0; }
         @Override public void pointAt(float fx, float fy) { calls.add("at " + fx + " " + fy); }
     }
 
@@ -81,28 +80,16 @@ public class CommandHandlerTest {
     }
 
     @Test
-    public void audioRequestsAreRecognised() {
-        assertEquals(Boolean.TRUE, CommandHandler.audioRequest("{\"t\":\"audio\",\"on\":true}"));
-        assertEquals(Boolean.FALSE, CommandHandler.audioRequest("{\"t\":\"audio\",\"on\":false}"));
-        assertEquals(null, CommandHandler.audioRequest("{\"t\":\"screen\",\"on\":true}"));
-        assertEquals(null, CommandHandler.audioRequest("nonsense"));
+    public void parseAcceptsOnlyShortJsonObjects() {
+        assertEquals("audio", CommandHandler.parse("{\"t\":\"audio\",\"on\":true}").optString("t"));
+        assertEquals(null, CommandHandler.parse("nonsense"));
+        assertEquals(null, CommandHandler.parse("{\"t\":\"" + "a".repeat(CommandHandler.MAX_MESSAGE) + "\"}"));
     }
 
     @Test
     public void theStreamQualityIsPassedOn() {
         send("{\"t\":\"quality\",\"v\":\"smooth\"}");
         assertEquals(java.util.Arrays.asList("quality smooth"), controller.calls);
-    }
-
-    @Test
-    public void screenAndUnpairRequestsAreRecognisedAndNothingElseIs() {
-        assertEquals(Boolean.TRUE, CommandHandler.screenRequest("{\"t\":\"screen\",\"on\":true}"));
-        assertEquals(Boolean.FALSE, CommandHandler.screenRequest("{\"t\":\"screen\",\"on\":false}"));
-        assertEquals(Boolean.FALSE, CommandHandler.screenRequest("{\"t\":\"screen\"}"));
-        assertEquals(null, CommandHandler.screenRequest("{\"t\":\"key\",\"k\":\"up\"}"));
-        assertEquals(null, CommandHandler.screenRequest("not json"));
-        assertTrue(CommandHandler.isUnpair("{\"t\":\"unpair\"}"));
-        assertFalse(CommandHandler.isUnpair("{\"t\":\"screen\"}"));
     }
 
     @Test

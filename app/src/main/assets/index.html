@@ -503,7 +503,6 @@ button:disabled{opacity:.45;cursor:default;transform:none}
           if (m.state === 'off') frameSeen = false;
           updateCastUI();
           break;
-        case 'stat': break;   // encode time from the TV: no longer shown
         case 'toast': toast(tr(String(m.v == null ? '' : m.v))); break;
         case 'lang': setLang(m.v); break;
         case 'revoked':

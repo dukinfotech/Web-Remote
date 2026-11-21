@@ -14,8 +14,9 @@ import java.util.Locale;
 
 /**
  * Who is allowed to control the TV. A device pairs with a six-digit PIN the TV shows for one minute after the owner asks
- * for it; it then gets a long random token, kept on the TV only as a hash. Five wrong PINs lock pairing for five minutes,
- * and the lock outlives the window: opening a new one does not lift it. Each device can be revoked.
+ * for it; it then gets a long random token, kept on the TV only as a hash. Five wrong PINs from one address lock that address
+ * for five minutes, and the lock outlives the window. One guest cannot keep the owner from pairing: the lock is per address.
+ * Many wrong PINs in total close the window. Each device can be revoked.
  */
 final class Pairing {
 
@@ -26,8 +27,8 @@ final class Pairing {
     }
 
     static final long WINDOW_MS = 60_000, LOCK_MS = 300_000;
-    static final int FAILS_BEFORE_LOCK = 5;
-    private static final int MAX_DEVICES = 20, MAX_NAME = 40;
+    static final int FAILS_BEFORE_LOCK = 5, MAX_WINDOW_FAILS = 50;
+    private static final int MAX_DEVICES = 20, MAX_NAME = 40, MAX_PEERS = 256;
 
     enum Status { OK, BAD_PIN, LOCKED, CLOSED }
 
@@ -63,8 +64,10 @@ final class Pairing {
     private final SecureRandom random = new SecureRandom();
     private final List<Device> devices = new ArrayList<>();
     private String pin;
-    private long windowEnd, lockedUntil;
-    private int fails;
+    private long windowEnd;
+    private int windowFails;
+    /** Per address that sent a wrong PIN: {wrong tries in this window, locked until}. */
+    private final java.util.Map<String, long[]> peers = new java.util.HashMap<>();
 
     Pairing(Store store) {
         this.store = store;
@@ -75,13 +78,15 @@ final class Pairing {
     synchronized String openWindow(long now) {
         pin = String.format(Locale.ROOT, "%06d", random.nextInt(1_000_000));
         windowEnd = now + WINDOW_MS;
-        fails = 0;
+        windowFails = 0;
+        for (long[] p : peers.values()) p[0] = 0;
         return pin;
     }
 
-    /** Seconds left of a lock after too many wrong PINs, or 0. */
-    synchronized int lockedSeconds(long now) {
-        return now < lockedUntil ? (int) ((lockedUntil - now + 999) / 1000) : 0;
+    /** Seconds left of a lock on this address after too many wrong PINs, or 0. */
+    synchronized int lockedSeconds(String peer, long now) {
+        long[] p = peers.get(peer);
+        return p != null && now < p[1] ? (int) ((p[1] - now + 999) / 1000) : 0;
     }
 
     synchronized void closeWindow() {
@@ -103,7 +108,13 @@ final class Pairing {
     }
 
     synchronized Result pair(String attempt, String name, long now) {
-        if (now < lockedUntil) return new Result(Status.LOCKED, null, lockedSeconds(now));
+        return pair(attempt, name, now, "");
+    }
+
+    /** peer is the address the attempt came from: wrong PINs are counted and locked per address. */
+    synchronized Result pair(String attempt, String name, long now, String peer) {
+        int locked = lockedSeconds(peer, now);
+        if (locked > 0) return new Result(Status.LOCKED, null, locked);
         if (!windowOpen(now)) return new Result(Status.CLOSED, null, 0);
         if (attempt != null && constantTimeEquals(attempt, pin)) {
             if (devices.size() >= MAX_DEVICES) devices.remove(0);
@@ -117,13 +128,15 @@ final class Pairing {
             closeWindow();
             return new Result(Status.OK, token, 0);
         }
-        fails++;
-        if (fails >= FAILS_BEFORE_LOCK) {
-            fails = 0;
-            lockedUntil = now + LOCK_MS;
-            closeWindow();
+        // shortcut: only addresses that failed are remembered, dropped when full; upgrade if a LAN can hold 256 hostile addresses.
+        if (peers.size() >= MAX_PEERS) peers.values().removeIf(p -> now >= p[1]);
+        long[] p = peers.computeIfAbsent(peer, k -> new long[2]);
+        if (++p[0] >= FAILS_BEFORE_LOCK) {
+            p[0] = 0;
+            p[1] = now + LOCK_MS;
             return new Result(Status.LOCKED, null, (int) (LOCK_MS / 1000));
         }
+        if (++windowFails >= MAX_WINDOW_FAILS) closeWindow();
         return new Result(Status.BAD_PIN, null, 0);
     }
 
@@ -207,7 +220,7 @@ final class Pairing {
 
     private static String clean(String name) {
         String n = name == null ? "" : name.replaceAll("[\\p{Cntrl}<>\"']", "").trim();
-        if (n.isEmpty()) n = "Thiết bị";
+        if (n.isEmpty()) n = "Device";
         return n.length() > MAX_NAME ? n.substring(0, MAX_NAME) : n;
     }
 

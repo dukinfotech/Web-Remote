@@ -85,9 +85,6 @@ interface Controller {
     /** "smooth", "balanced" or "sharp": the picture size and quality of the screen stream. Unknown names are ignored. */
     void screenQuality(String mode);
 
-    /** Average milliseconds the TV spends encoding one frame, for the page to show. */
-    int screenEncodeMs();
-
     /** Puts the pointer at a place on the screen, as fractions of its width and height. */
     void pointAt(float fx, float fy);
 
