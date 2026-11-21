@@ -27,6 +27,26 @@ No cloud, no account, no extra device. The TV runs the server itself and the pag
 
 > Requirements: Android TV or Google TV, Android 8.0 or newer.
 
+## Screenshots
+
+IP addresses, QR codes and PINs are blurred in these pictures.
+
+**The app on the TV**
+
+<p>
+  <img src="screenshots/tv-status.png" alt="The Status card on the TV: services, addresses and QR codes" width="49%">
+  <img src="screenshots/tv-pairing.png" alt="The pairing card with the six-digit PIN" width="49%">
+</p>
+
+**The web page on a phone or computer**
+
+<p>
+  <img src="screenshots/web-pairing.png" alt="Pairing screen: type the PIN" width="23%">
+  <img src="screenshots/web-screen.png" alt="Screen tab: the TV picture and the remote" width="23%">
+  <img src="screenshots/web-quality-menu.png" alt="Picture quality menu: 720p, 480p, 360p" width="23%">
+  <img src="screenshots/web-apps.png" alt="Apps tab: every app the TV can open" width="23%">
+</p>
+
 ## Using the page
 
 The page has four tabs at the bottom.

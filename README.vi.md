@@ -27,6 +27,26 @@ Không cần đám mây, không cần tài khoản, không cần thêm thiết b
 
 > Yêu cầu: tivi Android hoặc Google TV, Android 8.0 trở lên.
 
+## Ảnh chụp màn hình
+
+Địa chỉ IP, mã QR và mã PIN đã được làm mờ trong các ảnh này.
+
+**Ứng dụng trên tivi**
+
+<p>
+  <img src="screenshots/tv-status.png" alt="Thẻ Trạng thái trên tivi: dịch vụ, địa chỉ và mã QR" width="49%">
+  <img src="screenshots/tv-pairing.png" alt="Thẻ ghép đôi với mã PIN 6 số" width="49%">
+</p>
+
+**Trang web trên điện thoại hoặc máy tính**
+
+<p>
+  <img src="screenshots/web-pairing.png" alt="Màn hình ghép đôi: nhập mã PIN" width="23%">
+  <img src="screenshots/web-screen.png" alt="Thẻ Màn hình: hình tivi và bộ điều khiển" width="23%">
+  <img src="screenshots/web-quality-menu.png" alt="Menu chất lượng hình: 720p, 480p, 360p" width="23%">
+  <img src="screenshots/web-apps.png" alt="Thẻ Ứng dụng: mọi ứng dụng tivi mở được" width="23%">
+</p>
+
 ## Cách dùng trang điều khiển
 
 Trang có bốn thẻ ở phía dưới.
