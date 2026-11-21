@@ -27,6 +27,26 @@ No cloud, no account, no extra device. The TV runs the server itself and the pag
 
 > Requirements: Android TV or Google TV, Android 8.0 or newer.
 
+## Install with ADB (from a computer)
+
+Use this if you have a computer and would rather not click through the TV's menus. You need `adb` (Google's platform-tools) and ADB debugging turned on in the TV's Developer options. When the TV asks "Allow USB debugging?", choose Always allow.
+
+```bash
+adb connect <tv ip>:5555
+adb install -r web-remote.apk
+adb shell appops set tv.webremote ACCESS_RESTRICTED_SETTINGS allow
+adb shell settings put secure enabled_accessibility_services tv.webremote/.RemoteService
+adb shell settings put secure accessibility_enabled 1
+adb shell pm grant tv.webremote android.permission.RECORD_AUDIO
+```
+
+- **`adb install`:** on Android 14 it can wait for a confirmation on the TV's screen. If it hangs, send the file with `adb push web-remote.apk /data/local/tmp/` and run `adb shell pm install -r /data/local/tmp/web-remote.apk` instead.
+- **`appops ... ACCESS_RESTRICTED_SETTINGS allow`:** the same as **Allow restricted settings** in the TV's Settings. Android blocks accessibility for apps installed from a file (a "restricted setting"), and without this line it switches the service off again right after you turn it on.
+- **`settings put secure enabled_accessibility_services`:** turns the accessibility service on. This line *replaces* the list of enabled services. If you use other accessibility services, first read the list with `adb shell settings get secure enabled_accessibility_services` and put `:tv.webremote/.RemoteService` after what it prints.
+- **`pm grant ... RECORD_AUDIO`:** optional, for the TV's sound. The app also asks for it when you turn on Screen sharing.
+
+Then open Web Remote on the TV, turn on the **Control server** and continue with step 4 of the quick start. The permissions stay granted after you turn ADB debugging off.
+
 ## Screenshots
 
 IP addresses, QR codes and PINs are blurred in these pictures.
@@ -116,7 +136,7 @@ Turn on ADB debugging on the TV (Developer options), then:
 TV_HOST=<tv ip> ./install.sh     # an optional :port is accepted, the default is 5555
 ```
 
-The script builds the APK, installs it, grants `WRITE_SECURE_SETTINGS` and `RECORD_AUDIO`, switches the accessibility service on (without dropping services already enabled) and opens the app with the server on. The two permissions are optional: `WRITE_SECURE_SETTINGS` lets the app's switch turn its own service on, and `RECORD_AUDIO` can also be granted from the dialog the app shows when you start screen sharing. They stay granted after you turn debugging off.
+The script builds the APK, installs it, grants `WRITE_SECURE_SETTINGS` and `RECORD_AUDIO`, switches the accessibility service on (without dropping services already enabled) and opens the app with the server on. The two permissions are optional: `WRITE_SECURE_SETTINGS` lets the app's switch turn its own service on, and `RECORD_AUDIO` can also be granted from the dialog the app shows when you start screen sharing. They stay granted after you turn debugging off. The script does not run the `appops ... ACCESS_RESTRICTED_SETTINGS allow` line from [Install with ADB](#install-with-adb-from-a-computer): if the service switches itself off, run that line once.
 
 ### Build the APK on GitHub
 

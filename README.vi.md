@@ -27,6 +27,26 @@ Không cần đám mây, không cần tài khoản, không cần thêm thiết b
 
 > Yêu cầu: tivi Android hoặc Google TV, Android 8.0 trở lên.
 
+## Cài bằng ADB (từ máy tính)
+
+Dùng cách này nếu bạn có máy tính và không muốn bấm qua các menu trên tivi. Bạn cần `adb` (platform-tools của Google) và đã bật gỡ lỗi ADB trong Tùy chọn nhà phát triển của tivi. Khi tivi hỏi "Cho phép gỡ lỗi USB?", chọn Luôn cho phép.
+
+```bash
+adb connect <ip tivi>:5555
+adb install -r web-remote.apk
+adb shell appops set tv.webremote ACCESS_RESTRICTED_SETTINGS allow
+adb shell settings put secure enabled_accessibility_services tv.webremote/.RemoteService
+adb shell settings put secure accessibility_enabled 1
+adb shell pm grant tv.webremote android.permission.RECORD_AUDIO
+```
+
+- **`adb install`:** trên Android 14 lệnh này có thể chờ xác nhận trên màn hình tivi. Nếu nó đứng im, gửi file bằng `adb push web-remote.apk /data/local/tmp/` rồi chạy `adb shell pm install -r /data/local/tmp/web-remote.apk`.
+- **`appops ... ACCESS_RESTRICTED_SETTINGS allow`:** giống nút **Cho phép cài đặt bị hạn chế** trong Cài đặt của tivi. Android khóa quyền Trợ năng với app cài từ file ("cài đặt bị hạn chế"), nên nếu thiếu dòng này, dịch vụ sẽ bị tự tắt ngay sau khi bạn bật.
+- **`settings put secure enabled_accessibility_services`:** bật dịch vụ Trợ năng. Dòng này *thay thế* danh sách dịch vụ đang bật. Nếu bạn dùng dịch vụ Trợ năng khác, hãy đọc danh sách trước bằng `adb shell settings get secure enabled_accessibility_services` rồi thêm `:tv.webremote/.RemoteService` vào sau kết quả đó.
+- **`pm grant ... RECORD_AUDIO`:** không bắt buộc, để có tiếng tivi. App cũng sẽ hỏi quyền này khi bạn bật Chia sẻ màn hình.
+
+Sau đó mở Web Remote trên tivi, bật **Máy chủ điều khiển** và làm tiếp từ bước 4 của phần bắt đầu nhanh. Các quyền vẫn được giữ sau khi bạn tắt gỡ lỗi ADB.
+
 ## Ảnh chụp màn hình
 
 Địa chỉ IP, mã QR và mã PIN đã được làm mờ trong các ảnh này.
@@ -116,7 +136,7 @@ Bật ADB debugging trên tivi (Tùy chọn nhà phát triển), rồi chạy:
 TV_HOST=<ip tivi> ./install.sh   # có thể thêm :cổng, mặc định là 5555
 ```
 
-Script build APK, cài đặt, cấp quyền `WRITE_SECURE_SETTINGS` và `RECORD_AUDIO`, bật dịch vụ trợ năng (không làm mất các dịch vụ đã bật) và mở ứng dụng với máy chủ đang bật. Hai quyền này không bắt buộc: `WRITE_SECURE_SETTINGS` cho phép nút gạt trong app tự bật dịch vụ của nó, còn `RECORD_AUDIO` cũng có thể cấp qua hộp thoại mà app hiện khi bạn bật chia sẻ màn hình. Sau khi tắt debugging, các quyền này vẫn được giữ.
+Script build APK, cài đặt, cấp quyền `WRITE_SECURE_SETTINGS` và `RECORD_AUDIO`, bật dịch vụ trợ năng (không làm mất các dịch vụ đã bật) và mở ứng dụng với máy chủ đang bật. Hai quyền này không bắt buộc: `WRITE_SECURE_SETTINGS` cho phép nút gạt trong app tự bật dịch vụ của nó, còn `RECORD_AUDIO` cũng có thể cấp qua hộp thoại mà app hiện khi bạn bật chia sẻ màn hình. Sau khi tắt debugging, các quyền này vẫn được giữ. Script không chạy dòng `appops ... ACCESS_RESTRICTED_SETTINGS allow` trong mục [Cài bằng ADB](#cài-bằng-adb-từ-máy-tính): nếu dịch vụ tự tắt, hãy chạy dòng đó một lần.
 
 ### Build APK trên GitHub
 
