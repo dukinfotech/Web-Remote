@@ -34,7 +34,7 @@
     <string name="pair_new">Ghép đôi thiết bị mới</string>
     <string name="devices_title">Thiết bị đã ghép đôi (%1$d)</string>
     <string name="devices_hint">Mới nhất ở trên cùng. Bấm Thu hồi để xóa một thiết bị.</string>
-    <string name="audio_permission">Để chia sẻ cả âm thanh cùng hình, cấp quyền ghi âm một lần từ máy tính: adb shell pm grant tv.webremote android.permission.RECORD_AUDIO</string>
+    <string name="audio_permission">Khi bật chia sẻ màn hình, tivi sẽ xin quyền ghi âm để có tiếng. Không cấp thì vẫn có hình nhưng không có tiếng.</string>
     <string name="info_description">Thông tin và hướng dẫn</string>
     <string name="info_title">Hướng dẫn sử dụng</string>
     <string name="info_close">Đóng</string>

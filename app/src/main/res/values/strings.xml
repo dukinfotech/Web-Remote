@@ -34,7 +34,7 @@
     <string name="pair_new">Pair a new device</string>
     <string name="devices_title">Paired devices (%1$d)</string>
     <string name="devices_hint">Newest first. Press the unplug icon to remove a device.</string>
-    <string name="audio_permission">To share sound with the picture, grant the recording permission once from a computer: adb shell pm grant tv.webremote android.permission.RECORD_AUDIO</string>
+    <string name="audio_permission">Turning on screen sharing asks for the recording permission, which the sound needs. Without it the picture still works but there is no sound.</string>
     <string name="info_description">Info and guide</string>
     <string name="info_title">How to use</string>
     <string name="info_close">Close</string>

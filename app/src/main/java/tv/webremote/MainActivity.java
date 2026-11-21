@@ -29,7 +29,7 @@ import java.util.Set;
 public class MainActivity extends Activity {
 
     private static final String TAILSCALE = "com.tailscale.ipn";
-    private static final int REQUEST_SHARE = 7;
+    private static final int REQUEST_SHARE = 7, REQUEST_AUDIO = 8;
     /** Every text size in this screen is scaled by this, so more fits on the TV at once. */
     private static final float TEXT_SCALE = 0.82f;
     private static final int BG = 0xFF101319, CARD = 0xFF1B1F27, TEXT = 0xFFFFFFFF, DIM = 0xFFA7B0BE;
@@ -371,13 +371,31 @@ public class MainActivity extends Activity {
                 .show();
     }
 
-    /** Starts screen sharing (Android asks for its own permission first) or stops it. */
+    /**
+     * Stops screen sharing, or starts it. Starting first asks for the recording permission, which the sound needs, every time
+     * it is missing; the answer does not matter for the picture, so sharing goes on either way.
+     */
     private void toggleShare() {
         if (ScreenCapture.current != null) {
             stopService(new Intent(this, CaptureService.class));
             builtSignature = null;
             return;
         }
+        if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{android.Manifest.permission.RECORD_AUDIO}, REQUEST_AUDIO);
+            return;
+        }
+        startShare();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_AUDIO) startShare();
+        builtSignature = null;
+    }
+
+    private void startShare() {
         android.media.projection.MediaProjectionManager manager =
                 (android.media.projection.MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
         try {
