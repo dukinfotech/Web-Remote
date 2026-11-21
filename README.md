@@ -18,7 +18,7 @@ No cloud, no account, no extra device. The TV runs the server itself and the pag
 1. **Download the app** on the TV (or download it on a phone and copy it over with a USB stick):
    **[web-remote.apk](https://github.com/dukinfotech/Web-Remote/raw/apk/web-remote.apk)**
 2. **Install it.** The TV will ask you to allow installing from unknown sources. Say yes for the app you used to open the file.
-   If an older Web Remote is already on the TV, uninstall it first (the new file is signed with a different key).
+   If you installed an earlier build signed with a temporary key, uninstall it once first. From this build on, new versions install over the old one and keep your paired devices.
 3. **Open Web Remote** on the TV. In the **Status** card:
    - turn on the **Accessibility service** (the button opens the TV's Settings; find "Web Remote" and switch it on),
    - turn on the **Control server**. The card now shows an address such as `http://192.168.1.50:6789`.

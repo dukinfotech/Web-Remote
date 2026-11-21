@@ -18,7 +18,7 @@ Không cần đám mây, không cần tài khoản, không cần thêm thiết b
 1. **Tải ứng dụng** về tivi (hoặc tải bằng điện thoại rồi chép sang bằng USB):
    **[web-remote.apk](https://github.com/dukinfotech/Web-Remote/raw/apk/web-remote.apk)**
 2. **Cài đặt.** Tivi sẽ hỏi cho phép cài từ nguồn không rõ. Hãy đồng ý cho ứng dụng bạn dùng để mở file.
-   Nếu tivi đã có Web Remote bản cũ, hãy gỡ nó trước (file mới ký bằng khóa khác).
+   Nếu bạn đã cài một bản build trước đó ký bằng khóa tạm, hãy gỡ nó một lần. Từ bản này trở đi, bản mới cài đè lên bản cũ và giữ nguyên các thiết bị đã ghép.
 3. **Mở Web Remote** trên tivi. Ở thẻ **Trạng thái**:
    - bật **Dịch vụ trợ năng** (nút sẽ mở Cài đặt của tivi; tìm "Web Remote" và bật lên),
    - bật **Máy chủ điều khiển**. Thẻ sẽ hiện địa chỉ, ví dụ `http://192.168.1.50:6789`.
