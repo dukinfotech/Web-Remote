@@ -17,8 +17,6 @@
     <string name="open_on_device">Open this address on your phone or computer:</string>
     <string name="pairing_title">Pair a new device</string>
     <string name="pairing_hint">Press the button below, then enter the code on the control page. The code is valid for 1 minute. 5 wrong tries lock pairing for 5 minutes.</string>
-    <string name="qr_scan">Scan with the phone camera to open the remote</string>
-    <string name="qr_unavailable">Not available</string>
     <string name="server_not_running">Control server: on, but not running (is another app using port 6789?)</string>
     <string name="tailscale_title">Remote access (away from home)</string>
     <string name="tailscale_hint">Install Tailscale on the TV and on your phone and sign in to the same account. Then open the control page at the TV\'s 100.x.x.x address. The connection is encrypted and no router port is opened.</string>
