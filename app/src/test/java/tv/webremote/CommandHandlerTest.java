@@ -88,8 +88,8 @@ public class CommandHandlerTest {
 
     @Test
     public void theStreamQualityIsPassedOn() {
-        send("{\"t\":\"quality\",\"v\":\"smooth\"}");
-        assertEquals(java.util.Arrays.asList("quality smooth"), controller.calls);
+        send("{\"t\":\"quality\",\"v\":\"720p\"}");
+        assertEquals(java.util.Arrays.asList("quality 720p"), controller.calls);
     }
 
     @Test

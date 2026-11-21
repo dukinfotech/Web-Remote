@@ -230,7 +230,6 @@ public class MainActivity extends Activity {
                         () -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))));
         status.addView(statusRow(service ? getString(R.string.service_on) : getString(R.string.service_off), service ? GREEN : RED,
                 serviceButton));
-        if (!canSwitch) status.addView(text(getString(R.string.service_grant_hint), 12, DIM));
         boolean listening = serverListening();
         status.addView(statusRow(!on ? getString(R.string.server_off) : listening ? getString(R.string.server_on) : getString(R.string.server_not_running),
                 !on ? GREY : listening ? GREEN : ORANGE,

@@ -6,7 +6,6 @@
     <string name="status_title">Trạng thái</string>
     <string name="service_on">Dịch vụ trợ năng: đang bật</string>
     <string name="service_off">Dịch vụ trợ năng: đã tắt (không có nó thì không điều khiển được)</string>
-    <string name="service_grant_hint">Để bật/tắt ngay tại đây, cấp quyền một lần từ máy tính: adb shell pm grant tv.webremote android.permission.WRITE_SECURE_SETTINGS</string>
     <string name="service_switch_failed">Không đổi được cài đặt trợ năng. Hãy dùng nút Mở cài đặt.</string>
     <string name="open_accessibility">Mở cài đặt</string>
     <string name="server_on">Máy chủ điều khiển: đang bật</string>

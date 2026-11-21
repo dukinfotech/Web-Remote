@@ -6,7 +6,6 @@
     <string name="status_title">Status</string>
     <string name="service_on">Accessibility service: on</string>
     <string name="service_off">Accessibility service: off (nothing can be controlled without it)</string>
-    <string name="service_grant_hint">To switch it here, grant a permission once from a computer: adb shell pm grant tv.webremote android.permission.WRITE_SECURE_SETTINGS</string>
     <string name="service_switch_failed">Could not change the accessibility setting. Use the Open settings button.</string>
     <string name="open_accessibility">Open settings</string>
     <string name="server_on">Control server: on</string>

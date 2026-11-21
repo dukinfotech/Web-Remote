@@ -82,7 +82,7 @@ interface Controller {
 
     void screenUnsubscribe(FrameSink sink);
 
-    /** "smooth", "balanced" or "sharp": the picture size and quality of the screen stream. Unknown names are ignored. */
+    /** "480p", "720p" or "1080p": the picture height and quality of the screen stream. Unknown names are ignored. */
     void screenQuality(String mode);
 
     /** Puts the pointer at a place on the screen, as fractions of its width and height. */

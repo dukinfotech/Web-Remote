@@ -43,7 +43,7 @@ Tips: tap the TV picture to move the pointer there and click. The keyboard butto
 ### Seeing the TV screen, and hearing it
 
 1. On the TV, turn on **Screen sharing** in the app. Android asks for screen-capture permission (and for the recording permission, which the sound needs; if you refuse that one you still get the picture, only no sound, and it asks again next time).
-2. On the page, press the cast button. Pick the quality (640, 960 or 1280 pixels wide).
+2. On the page, press the cast button. Pick the quality (480p, 720p or 1080p; 720p is the default).
 3. Press the speaker button on the picture to hear the TV. It only captures what apps play, never a microphone.
 
 Some video (DRM, some streaming apps) and HDMI inputs show black, because Android hides them from screen capture. On an iPhone the sound may stay silent while the silent switch is on.

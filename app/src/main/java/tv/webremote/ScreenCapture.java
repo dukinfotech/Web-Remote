@@ -51,7 +51,7 @@ final class ScreenCapture {
         screenW = metrics.widthPixels;
         screenH = metrics.heightPixels;
         dpi = metrics.densityDpi;
-        width = Math.min(960, screenW);
+        width = widthFor(720);
         height = heightFor(width);
         thread.start();
         handler = new Handler(thread.getLooper());
@@ -69,23 +69,28 @@ final class ScreenCapture {
         current = this;
     }
 
+    /** The width of a picture that is h pixels high, in the shape of the screen and even. */
+    private int widthFor(int h) {
+        return Math.min(screenW, (screenW * h / screenH + 1) & ~1);
+    }
+
     private int heightFor(int w) {
         return Math.max(2, (screenH * w / screenW) & ~1);
     }
 
     /**
-     * Picture size and JPEG quality: "smooth" (640 px wide), "balanced" (960) or "sharp" (1280). Every viewer gets the
-     * setting, since there is one capture. Anything else is ignored.
+     * Picture size and JPEG quality: "480p", "720p" (the start-up setting) or "1080p". The width follows the screen's shape.
+     * Every viewer gets the setting, since there is one capture. Anything else is ignored.
      */
     void setMode(String mode) {
-        final int w, q;
+        final int h, q;
         switch (mode == null ? "" : mode) {
-            case "smooth": w = 640; q = 50; break;
-            case "balanced": w = 960; q = 60; break;
-            case "sharp": w = 1280; q = 70; break;
+            case "480p": h = 480; q = 50; break;
+            case "720p": h = 720; q = 60; break;
+            case "1080p": h = 1080; q = 70; break;
             default: return;
         }
-        final int target = Math.min(w, screenW);
+        final int target = widthFor(h);
         handler.post(() -> {
             if (stopped || (target == width && q == quality)) return;
             quality = q;

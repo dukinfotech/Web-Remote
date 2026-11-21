@@ -186,7 +186,7 @@ button:disabled{opacity:.45;cursor:default;transform:none}
   </header>
   <main>
     <section id="t-pad">
-      <div id="pad"><canvas id="scrc" width="960" height="540" aria-hidden="true"></canvas><div id="fps" aria-live="off"><b id="fpsn"></b></div><button id="audBtn" type="button" disabled></button><div id="qbox"><div id="qMenu" role="menu" hidden><button type="button" role="menuitemradio" data-q="sharp">Nét</button><button type="button" role="menuitemradio" data-q="balanced">Cân bằng</button><button type="button" role="menuitemradio" data-q="smooth">Mượt</button></div><button id="qBtn" type="button" aria-haspopup="menu" aria-expanded="false" title="Chất lượng hình"></button></div><button id="fsBtn" type="button" aria-label="Toàn màn hình" title="Toàn màn hình"></button><div id="padhint">
+      <div id="pad"><canvas id="scrc" width="960" height="540" aria-hidden="true"></canvas><div id="fps" aria-live="off"><b id="fpsn"></b></div><button id="audBtn" type="button" disabled></button><div id="qbox"><div id="qMenu" role="menu" hidden><button type="button" role="menuitemradio" data-q="1080p">1080p</button><button type="button" role="menuitemradio" data-q="720p">720p</button><button type="button" role="menuitemradio" data-q="480p">480p</button></div><button id="qBtn" type="button" aria-haspopup="menu" aria-expanded="false" title="Chất lượng hình"></button></div><button id="fsBtn" type="button" aria-label="Toàn màn hình" title="Toàn màn hình"></button><div id="padhint">
         <h4>Cử chỉ</h4>
         <div class="g"><i class="gi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="12" r="2.6" fill="currentColor" stroke="none"/><path d="M12 12h9M18 8l4 4-4 4"/></svg></i><div class="gt"><b>Vuốt một ngón</b><span>Di chuyển con trỏ</span></div></div>
         <div class="g"><i class="gi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="2.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="6.5" opacity=".55"/><circle cx="12" cy="12" r="10" opacity=".25"/></svg></i><div class="gt"><b>Chạm một ngón</b><span>Bấm</span></div></div>
@@ -649,20 +649,17 @@ button:disabled{opacity:.45;cursor:default;transform:none}
   var tvSharing = null;                          // null until the TV has answered
   var castShown = false, idleTimer = 0;
   var castWanted = store.get('rt_cast') !== '0'; // on unless the person turned it off
-  var quality = store.get('rt_q') || 'balanced';
-  if (['smooth', 'balanced', 'sharp'].indexOf(quality) < 0) quality = 'balanced';
+  var quality = store.get('rt_q') || '720p';
+  if (['480p', '720p', '1080p'].indexOf(quality) < 0) quality = '720p';
   function castActive() { return tab === 'pad' && castWanted && !document.hidden; }
-  // The modes are named by what they are: picture size (the height follows the TV's shape) and JPEG quality.
-  var QSPEC = { smooth: { w: 640, q: 50 }, balanced: { w: 960, q: 60 }, sharp: { w: 1280, q: 70 } };
-  function dims(w) { return w + '×' + (Math.round(w * scrc.height / scrc.width / 2) * 2); }
-  function qLabel(mode) { return dims(QSPEC[mode].w); }
-  function qButtonLabel() { return dims(QSPEC[quality].w); }
-  var GEAR = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
+  // The modes are the picture height; the TV picks the width and the JPEG quality for it.
+  function qButtonLabel() { return quality; }
+  // The settings gear of YouTube's player (Material "settings", filled).
+  var GEAR = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>';
   function markQuality() {
     $('qBtn').innerHTML = GEAR + '<span id="qBtnText">' + qButtonLabel() + '</span>';
     Array.prototype.forEach.call(document.querySelectorAll('#qMenu button'), function (b) {
       var on = b.dataset.q === quality;
-      b.textContent = qLabel(b.dataset.q);
       b.classList.toggle('sel', on);
       b.setAttribute('aria-checked', on ? 'true' : 'false');
     });

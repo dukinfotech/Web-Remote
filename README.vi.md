@@ -43,7 +43,7 @@ Mẹo: chạm vào hình tivi để đưa con trỏ tới đó và bấm. Nút b
 ### Xem màn hình tivi và nghe tiếng
 
 1. Trên tivi, bật **Chia sẻ màn hình** trong ứng dụng. Android sẽ xin quyền quay màn hình (và quyền ghi âm để có tiếng; nếu bạn từ chối quyền này thì vẫn có hình, chỉ không có tiếng, và lần sau app sẽ hỏi lại).
-2. Trên trang web, bấm nút chiếu màn hình. Chọn chất lượng (rộng 640, 960 hoặc 1280 điểm ảnh).
+2. Trên trang web, bấm nút chiếu màn hình. Chọn chất lượng (480p, 720p hoặc 1080p; mặc định là 720p).
 3. Bấm nút loa trên hình để nghe tiếng tivi. App chỉ thu âm thanh mà các ứng dụng phát ra, không bao giờ thu micro.
 
 Một số video (DRM, vài ứng dụng xem phim) và cổng HDMI sẽ hiện màu đen vì Android chặn quay màn hình. Trên iPhone, tiếng có thể im khi công tắc im lặng đang bật.
