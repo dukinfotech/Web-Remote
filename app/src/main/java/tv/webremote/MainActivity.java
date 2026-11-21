@@ -272,7 +272,9 @@ public class MainActivity extends Activity {
             LinearLayout how = column();
             how.setGravity(Gravity.CENTER_VERTICAL);
             how.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-            how.addView(text(getString(R.string.open_on_device), 15, DIM));
+            // With both addresses the lines say "one of these 2"; with one address they say "this".
+            boolean both = Core.addresses().size() >= 2;
+            how.addView(text(getString(both ? R.string.open_on_device_both : R.string.open_on_device), 15, DIM));
             LinearLayout codes = column();
             codes.setGravity(Gravity.CENTER_HORIZONTAL);
             LinearLayout codeRow = row();
@@ -288,7 +290,7 @@ public class MainActivity extends Activity {
             }
             codes.addView(codeRow);
             if (codeRow.getChildCount() > 0) {
-                TextView scan = text(getString(R.string.qr_scan), 12, DIM);
+                TextView scan = text(getString(both ? R.string.qr_scan_both : R.string.qr_scan), 12, DIM);
                 scan.setGravity(Gravity.CENTER);
                 codes.addView(scan);
             }
